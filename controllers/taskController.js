@@ -22,26 +22,20 @@ const getTasks = async (req, res) => {
 };
 
 // ✅ Create a new task
+// taskController.js - createTask
 const createTask = async (req, res) => {
   try {
-    const { title, description, dueDate } = req.body;
-
-    if (!title) {
-      return res.status(400).json({ message: "Title is required" });
-    }
-
-    // If dueDate is not provided, set current date automatically
-    const task = new Task({
-      userId: req.user._id,
-      title,
-      description,
-      dueDate: dueDate || new Date(), // ✅ Auto current date
+    const newTask = await Task.create({
+      title: req.body.title,
+      description: req.body.description,
+      dueDate: req.body.dueDate,
+      status: req.body.status || "pending",
+      userId: req.user._id, // ✅ Must set logged-in user
     });
 
-    await task.save();
-    res.status(201).json(task);
+    res.status(201).json(newTask);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -68,13 +62,14 @@ const updateTask = async (req, res) => {
 };
 
 // ✅ Delete a task
-// DELETE /api/tasks/:id
 const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check if ID exists and belongs to the logged-in user
-    const task = await Task.findOneAndDelete({ _id: id, userId: req.user._id });
+    const task = await Task.findOneAndDelete({
+      _id: id,
+      userId: req.user._id // ✅ ensures user can only delete their tasks
+    });
 
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
@@ -85,5 +80,8 @@ const deleteTask = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
 
 module.exports = { getTasks, createTask, updateTask, deleteTask };
